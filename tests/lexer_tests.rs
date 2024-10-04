@@ -112,7 +112,7 @@ fn test_lexer_number_followed_by_dot() {
     let mut lexer = Lexer::new("42.add(3)");
     let tokens = lexer.tokenize().unwrap();
     assert_eq!(tokens, vec![
-        Token::Number(42.0),
+        Token::Identifier(42.to_string()),
         Token::Dot,
         Token::Identifier("add".to_string()),
         Token::LeftParen,

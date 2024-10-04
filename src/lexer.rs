@@ -117,18 +117,22 @@ impl Lexer {
         while let Some(c) = self.peek() {
             if c.is_digit(10) {
                 value.push(self.advance());
-            } else if c == '.' && !has_decimal {
-                // Look ahead to see if the next character is a digit
-                if self.peek_next().map_or(false, |next| next.is_digit(10)) {
+            } else if c == '.' {
+                if has_decimal {
+                    return Err("Invalid number format: multiple decimal points".to_string());
+                } else if self.peek_next().map_or(false, |next| next.is_digit(10)) {
                     value.push(self.advance());
                     has_decimal = true;
                 } else {
-                    // If the next character is not a digit, this dot is not part of the number
                     break;
                 }
             } else {
                 break;
             }
+        }
+
+        if self.peek() == Some('.') && !has_decimal {
+            return Ok(Some(Token::Identifier(value)));
         }
 
         value.parse::<f64>()
