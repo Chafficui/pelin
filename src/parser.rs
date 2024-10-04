@@ -43,8 +43,12 @@ impl Parser {
         Parser { tokens, current: 0 }
     }
 
-    pub fn parse(&mut self) -> Result<Expr, String> {
-        self.expression()
+    pub fn parse(&mut self) -> Result<Vec<Expr>, String> {
+        let mut expressions = Vec::new();
+        while !self.is_at_end() {
+            expressions.push(self.expression()?);
+        }
+        Ok(expressions)
     }
 
     fn expression(&mut self) -> Result<Expr, String> {

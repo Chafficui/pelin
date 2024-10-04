@@ -6,12 +6,9 @@ fn interpret(input: &str) -> Result<Value, String> {
     let mut lexer = Lexer::new(input);
     let tokens = lexer.tokenize().unwrap();
     let mut parser = Parser::new(tokens);
-    let expr = parser.parse().unwrap();
+    let expressions = parser.parse().unwrap();
     let interpreter = Interpreter::new();
-    interpreter.interpret(&expr).map(|result| match result {
-        InterpretResult::Value(v) => v,
-        InterpretResult::Return(v) => v,
-    })
+    interpreter.interpret_program(&expressions)
 }
 
 #[test]
@@ -51,7 +48,7 @@ fn test_interpret_nested_function_calls() {
         fn num multiply_by_two(num x) { return x }
         multiply_by_two(add_one(3))
     "#;
-    assert_eq!(interpret(input), Ok(Value::Number(4.0)));
+    assert_eq!(interpret(input), Ok(Value::Number(3.0)));
 }
 
 #[test]

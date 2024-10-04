@@ -73,6 +73,17 @@ impl Interpreter {
         }
     }
 
+    pub fn interpret_program(&self, expressions: &[Expr]) -> Result<Value, String> {
+        let mut result = Value::Nun;
+        for expr in expressions {
+            match self.interpret(expr)? {
+                InterpretResult::Value(value) => result = value,
+                InterpretResult::Return(value) => return Ok(value),
+            }
+        }
+        Ok(result)
+    }
+
     pub fn interpret(&self, expr: &Expr) -> Result<InterpretResult, String> {
         match expr {
             Expr::Number(n) => {
