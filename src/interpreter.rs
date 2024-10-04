@@ -1,6 +1,7 @@
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::collections::HashMap;
+use log::trace;
 use crate::parser::{Expr, Type};
 
 #[derive(Debug, Clone, PartialEq)]
@@ -74,16 +75,30 @@ impl Interpreter {
 
     pub fn interpret(&self, expr: &Expr) -> Result<InterpretResult, String> {
         match expr {
-            Expr::Number(n) => Ok(InterpretResult::Value(Value::Number(*n))),
-            Expr::String(s) => Ok(InterpretResult::Value(Value::String(s.clone()))),
-            Expr::Boolean(b) => Ok(InterpretResult::Value(Value::Boolean(*b))),
-            Expr::Nun => Ok(InterpretResult::Value(Value::Nun)),
+            Expr::Number(n) => {
+                trace!("Interpreting number: {}", n);
+                Ok(InterpretResult::Value(Value::Number(*n)))
+            },
+            Expr::String(s) => {
+                trace!("Interpreting string: {}", s);
+                Ok(InterpretResult::Value(Value::String(s.clone())))
+            },
+            Expr::Boolean(b) => {
+                trace!("Interpreting boolean: {}", b);
+                Ok(InterpretResult::Value(Value::Boolean(*b)))
+            },
+            Expr::Nun => {
+                trace!("Interpreting nun");
+                Ok(InterpretResult::Value(Value::Nun))
+            },
             Expr::Identifier(name) => {
+                trace!("Interpreting identifier: {}", name);
                 self.environment.borrow().get(name)
                     .map(InterpretResult::Value)
                     .ok_or_else(|| format!("Undefined variable '{}'.", name))
             },
             Expr::Return(value) => {
+                trace!("Interpreting return");
                 let value = self.interpret(value)?;
                 match value {
                     InterpretResult::Value(v) => Ok(InterpretResult::Return(v)),
