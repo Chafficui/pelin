@@ -15,6 +15,9 @@ pub enum Token {
     RightBrace,
     Comma,
     Equal,
+    // Import
+    Imp,
+    Dot,
     // End of input
     EOF,
 }
@@ -59,6 +62,7 @@ impl Lexer {
             ',' => { self.advance(); Ok(Some(Token::Comma)) },
             '"' => self.string(),
             '=' => Ok(Some(Token::Equal)),
+            '.' => { self.advance(); Ok(Some(Token::Dot)) },
             '0'..='9' => self.number(),
             'a'..='z' | 'A'..='Z' | '_' => self.identifier_or_keyword(),
             _ => Err(format!("Unexpected character: {}", c)),
@@ -89,6 +93,10 @@ impl Lexer {
         self.input.get(self.position).copied()
     }
 
+    fn peek_next(&self) -> Option<char> {
+        self.input.get(self.position + 1).copied()
+    }
+
     fn string(&mut self) -> Result<Option<Token>, String> {
         self.advance(); // Consume the opening quote
         let mut value = String::new();
@@ -110,20 +118,22 @@ impl Lexer {
             if c.is_digit(10) {
                 value.push(self.advance());
             } else if c == '.' && !has_decimal {
-                value.push(self.advance());
-                has_decimal = true;
+                // Look ahead to see if the next character is a digit
+                if self.peek_next().map_or(false, |next| next.is_digit(10)) {
+                    value.push(self.advance());
+                    has_decimal = true;
+                } else {
+                    // If the next character is not a digit, this dot is not part of the number
+                    break;
+                }
             } else {
                 break;
             }
         }
 
-        if value.ends_with('.') {
-            return Err("Invalid number format".to_string());
-        }
-
         value.parse::<f64>()
             .map(|n| Some(Token::Number(n)))
-            .map_err(|e| format!("Invalid number: {}", e))
+            .map_err(|_| "Invalid number format".to_string())
     }
 
     fn identifier_or_keyword(&mut self) -> Result<Option<Token>, String> {
@@ -141,6 +151,7 @@ impl Lexer {
             "false" => Token::Boolean(false),
             "nun" => Token::Nun,
             "return" => Token::Return,
+            "imp" => Token::Imp,
             _ => Token::Identifier(value),
         }))
     }

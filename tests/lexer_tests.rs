@@ -99,3 +99,42 @@ fn test_lexer_complex_identifier() {
     let tokens = lexer.tokenize().unwrap();
     assert_eq!(tokens, vec![Token::Identifier("_complex123_identifier".to_string()), Token::EOF]);
 }
+
+#[test]
+fn test_lexer_valid_number() {
+    let mut lexer = Lexer::new("42.42");
+    let tokens = lexer.tokenize().unwrap();
+    assert_eq!(tokens, vec![Token::Number(42.42), Token::EOF]);
+}
+
+#[test]
+fn test_lexer_number_followed_by_dot() {
+    let mut lexer = Lexer::new("42.add(3)");
+    let tokens = lexer.tokenize().unwrap();
+    assert_eq!(tokens, vec![
+        Token::Number(42.0),
+        Token::Dot,
+        Token::Identifier("add".to_string()),
+        Token::LeftParen,
+        Token::Number(3.0),
+        Token::RightParen,
+        Token::EOF
+    ]);
+}
+
+#[test]
+fn test_lexer_feather_function_call() {
+    let mut lexer = Lexer::new("std_math.add(5, 3)");
+    let tokens = lexer.tokenize().unwrap();
+    assert_eq!(tokens, vec![
+        Token::Identifier("std_math".to_string()),
+        Token::Dot,
+        Token::Identifier("add".to_string()),
+        Token::LeftParen,
+        Token::Number(5.0),
+        Token::Comma,
+        Token::Number(3.0),
+        Token::RightParen,
+        Token::EOF
+    ]);
+}
