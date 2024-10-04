@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::path::{PathBuf};
-use std::fs;
 use crate::interpreter::Value;
 
 #[derive(Debug, Clone)]
@@ -35,8 +34,8 @@ impl FeatherManager {
             return Err(format!("Could not find Feather file: {}", path.display()));
         }
         
-        let content = fs::read_to_string(&path)
-            .map_err(|e| format!("Failed to read file: {:?}", e))?;
+        //let content = fs::read_to_string(&path)
+        //    .map_err(|e| format!("Failed to read file: {:?}", e))?;
         
         // TODO implement feather import
 

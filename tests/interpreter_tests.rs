@@ -4,9 +4,9 @@ use pelin::interpreter::{Interpreter, Value};
 
 fn interpret(input: &str) -> Result<Value, String> {
     let mut lexer = Lexer::new(input);
-    let tokens = lexer.tokenize().unwrap();
+    let tokens = lexer.tokenize()?;
     let mut parser = Parser::new(tokens_to_token_types(tokens));
-    let expressions = parser.parse().unwrap();
+    let expressions = parser.parse()?;
     let interpreter = Interpreter::new();
     interpreter.interpret_program(&expressions)
 }
