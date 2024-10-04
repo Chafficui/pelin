@@ -26,5 +26,7 @@ jobs:
           toolchain: stable
           override: true
           components: rustfmt
-                        - name: Build
+      - name: Test
+        run: cargo test --verbose
+      - name: Build
         run: cargo build --verbose
