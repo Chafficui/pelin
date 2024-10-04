@@ -34,9 +34,11 @@ impl FeatherManager {
         if !path.exists() {
             return Err(format!("Could not find Feather file: {}", path.display()));
         }
-
+        
         let content = fs::read_to_string(&path)
             .map_err(|e| format!("Failed to read file: {:?}", e))?;
+        
+        // TODO implement feather import
 
         let feather = Feather {
             name: name.to_string(),

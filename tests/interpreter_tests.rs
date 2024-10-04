@@ -1,11 +1,11 @@
-use pelin::lexer::Lexer;
+use pelin::lexer::{tokens_to_token_types, Lexer};
 use pelin::parser::Parser;
-use pelin::interpreter::{Interpreter, Value, InterpretResult};
+use pelin::interpreter::{Interpreter, Value};
 
 fn interpret(input: &str) -> Result<Value, String> {
     let mut lexer = Lexer::new(input);
     let tokens = lexer.tokenize().unwrap();
-    let mut parser = Parser::new(tokens);
+    let mut parser = Parser::new(tokens_to_token_types(tokens));
     let expressions = parser.parse().unwrap();
     let interpreter = Interpreter::new();
     interpreter.interpret_program(&expressions)

@@ -39,6 +39,10 @@ pub struct Lexer {
     column: usize,
 }
 
+pub fn tokens_to_token_types(tokens: Vec<Token>) -> Vec<TokenType> {
+    tokens.into_iter().map(|token| token.kind).collect()
+}
+
 impl Lexer {
     pub fn new(input: &str) -> Self {
         Lexer {
@@ -173,7 +177,7 @@ impl Lexer {
                 break;
             }
         }
-        
+
         if self.peek() == Some('.') && !has_decimal {
             return Ok(Token {
                 kind: Identifier(value.clone()),

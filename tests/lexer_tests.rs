@@ -1,8 +1,4 @@
-use pelin::lexer::{Lexer, TokenType, Token};
-
-fn tokens_to_token_types(tokens: Vec<Token>) -> Vec<TokenType> {
-    tokens.into_iter().map(|token| token.kind).collect()
-}
+use pelin::lexer::{Lexer, TokenType, tokens_to_token_types};
 
 #[test]
 fn test_lexer_numbers() {
