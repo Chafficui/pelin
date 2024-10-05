@@ -147,6 +147,8 @@ impl Interpreter {
                 }
                 self.call_function(callee_value, arg_values)
             },
+            &Expr::Import(_) => todo!(),
+            &Expr::RustFunctionCall { .. } => todo!(),
         }
     }
 

@@ -30,7 +30,12 @@ pub enum Expr {
     Assignment {
         name: String,
         value: Box<Expr>,
-    }
+    },
+    Import(String),
+    RustFunctionCall {
+        path: Vec<String>,
+        arguments: Vec<Expr>,
+    },
 }
 
 pub struct Parser {
@@ -46,13 +51,24 @@ impl Parser {
     pub fn parse(&mut self) -> Result<Vec<Expr>, String> {
         let mut expressions = Vec::new();
         while !self.is_at_end() {
-            expressions.push(self.expression()?);
+            if self.match_token(&[TokenType::Imp]) {
+                expressions.push(self.import_statement()?);
+            } else {
+                expressions.push(self.expression()?);
+            }
         }
         Ok(expressions)
     }
 
+    fn import_statement(&mut self) -> Result<Expr, String> {
+        let name = self.consume_identifier("Expected feather name after 'imp'")?;
+        Ok(Expr::Import(name))
+    }
+
     fn expression(&mut self) -> Result<Expr, String> {
-        if self.match_token(&[TokenType::Return]) {
+        if self.match_token(&[TokenType::RustKeyword]) {
+            self.rust_function_call()
+        } else if self.match_token(&[TokenType::Return]) {
             let value = self.expression()?;
             Ok(Expr::Return(Box::new(value)))
         } else if self.match_token(&[TokenType::Fn]) {
@@ -60,6 +76,41 @@ impl Parser {
         } else {
             self.function_call()
         }
+    }
+
+    fn rust_function_call(&mut self) -> Result<Expr, String> {
+        self.consume(TokenType::LeftBracket, "Expected '[' after 'RUST'")?;
+        let mut path = Vec::new();
+
+        loop {
+            path.push(self.consume_identifier("Expected identifier in Rust function path")?);
+            if !self.match_token(&[TokenType::DoubleColon]) {
+                break;
+            }
+        }
+
+        self.consume(TokenType::RightBracket, "Expected ']' after Rust function path")?;
+
+        self.consume(TokenType::LeftParen, "Expected '(' after Rust function path")?;
+        let arguments = if self.check(&TokenType::RightParen) {
+            Vec::new()
+        } else {
+            self.parse_arguments()?
+        };
+        self.consume(TokenType::RightParen, "Expected ')' after arguments in Rust function call")?;
+
+        Ok(Expr::RustFunctionCall { path, arguments })
+    }
+
+    fn parse_arguments(&mut self) -> Result<Vec<Expr>, String> {
+        let mut args = Vec::new();
+        loop {
+            args.push(self.expression()?);
+            if !self.match_token(&[TokenType::Comma]) {
+                break;
+            }
+        }
+        Ok(args)
     }
 
     fn function_definition(&mut self) -> Result<Expr, String> {
