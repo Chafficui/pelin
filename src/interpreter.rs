@@ -166,6 +166,17 @@ impl Interpreter {
                 }
                 self.call_function(callee_value, arg_values)
             },
+            Expr::FeatherFunctionCall { feather, function, arguments } => {
+                let mut arg_values = Vec::new();
+                for arg in arguments {
+                    match self.interpret(arg)? {
+                        InterpretResult::Value(v) => arg_values.push(v),
+                        InterpretResult::Return(_) => return Err("Unexpected return".to_string()),
+                    }
+                }
+                let result = self.feather_manager.borrow().call_function(feather, function, arg_values)?;
+                Ok(InterpretResult::Value(result))
+            },
         }
     }
 

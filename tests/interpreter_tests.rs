@@ -5,7 +5,12 @@ use pelin::lexer::{Lexer};
 use pelin::parser::Parser;
 use pelin::interpreter::{InterpretResult, Interpreter, Value};
 
+fn init_logger() {
+    let _ = env_logger::builder().is_test(true).try_init();
+}
+
 fn interpret(input: &str) -> Result<Value, String> {
+    init_logger();
     let mut lexer = Lexer::new(input);
     let tokens = lexer.tokenize()?;
     let mut parser = Parser::new(tokens);

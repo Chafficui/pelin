@@ -1,5 +1,6 @@
 use crate::interpreter::Value;
 
+// num
 pub fn std_num_add(args: Vec<Value>) -> Result<Value, String> {
     if args.len() != 2 {
         return Err("add function expects 2 arguments".to_string());
@@ -59,5 +60,30 @@ pub fn std_num_sqrt(args: Vec<Value>) -> Result<Value, String> {
             }
         }
         _ => Err("sqrt function expects a number argument".to_string()),
+    }
+}
+
+// io
+pub fn std_io_print(args: Vec<Value>) -> Result<Value, String> {
+    for arg in args {
+        print!("{:?}", arg);
+    }
+    Ok(Value::Nun)
+}
+
+// if, while, for, etc.
+pub fn std_control_if(args: Vec<Value>) -> Result<Value, String> {
+    if args.len() != 3 {
+        return Err("if function expects 3 arguments".to_string());
+    }
+    match &args[0] {
+        Value::Boolean(b) => {
+            if *b {
+                Ok(args[1].clone())
+            } else {
+                Ok(args[2].clone())
+            }
+        }
+        _ => Err("if function expects a boolean argument".to_string()),
     }
 }

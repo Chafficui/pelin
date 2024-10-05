@@ -36,6 +36,11 @@ pub enum Expr {
         path: Vec<String>,
         arguments: Vec<Expr>,
     },
+    FeatherFunctionCall {
+        feather: String,
+        function: String,
+        arguments: Vec<Expr>,
+    },
 }
 
 pub struct Parser {
@@ -167,15 +172,42 @@ impl Parser {
     fn function_call(&mut self) -> Result<Expr, String> {
         let mut expr = self.primary()?;
 
-        if self.match_token(&[TokenType::LeftParen]) {
-            let arguments = self.arguments()?;
-            expr = Expr::FunctionCall {
-                callee: Box::new(expr),
-                arguments,
-            };
+        loop {
+            if self.match_token(&[TokenType::LeftParen]) {
+                expr = self.finish_call(expr)?;
+            } else if self.match_token(&[TokenType::Dot]) {
+                let name = self.consume_identifier("Expected property name after '.'")?;
+                if self.match_token(&[TokenType::LeftParen]) {
+                    let arguments = self.arguments()?;
+                    if let Expr::Identifier(feather) = expr {
+                        expr = Expr::FeatherFunctionCall {
+                            feather,
+                            function: name,
+                            arguments,
+                        };
+                    } else {
+                        return Err("Expected feather name before '.'".to_string());
+                    }
+                } else {
+                    expr = Expr::FunctionCall {
+                        callee: Box::new(expr),
+                        arguments: vec![Expr::Identifier(name)],
+                    };
+                }
+            } else {
+                break;
+            }
         }
 
         Ok(expr)
+    }
+
+    fn finish_call(&mut self, callee: Expr) -> Result<Expr, String> {
+        let arguments = self.arguments()?;
+        Ok(Expr::FunctionCall {
+            callee: Box::new(callee),
+            arguments,
+        })
     }
 
     fn arguments(&mut self) -> Result<Vec<Expr>, String> {
