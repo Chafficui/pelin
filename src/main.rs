@@ -2,6 +2,7 @@ mod interpreter;
 mod lexer;
 mod parser;
 mod feather;
+mod std_functions;
 
 use rustyline::error::ReadlineError;
 use rustyline::DefaultEditor;

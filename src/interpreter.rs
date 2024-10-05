@@ -2,6 +2,7 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use log::trace;
+use crate::feather::FeatherManager;
 use crate::parser::{Expr, Type};
 
 #[derive(Debug, Clone, PartialEq)]
@@ -11,6 +12,7 @@ pub enum Value {
     Boolean(bool),
     Nun,
     Function(Rc<Function>),
+    FeatherFunction(String, String),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -64,12 +66,14 @@ impl Environment {
 
 pub struct Interpreter {
     environment: Rc<RefCell<Environment>>,
+    feather_manager: Rc<RefCell<FeatherManager>>,
 }
 
 impl Interpreter {
-    pub fn new() -> Self {
+    pub fn new(feather_manager: Rc<RefCell<FeatherManager>>) -> Self {
         Interpreter {
             environment: Rc::new(RefCell::new(Environment::new())),
+            feather_manager,
         }
     }
 
@@ -135,11 +139,26 @@ impl Interpreter {
                 self.environment.borrow_mut().define(name.clone(), Value::Function(Rc::new(function)));
                 Ok(InterpretResult::Value(Value::Nun))
             },
+            Expr::Import(name) => {
+                trace!("Interpreting import: {}", name);
+                self.feather_manager.borrow_mut().import(name)?;
+                Ok(InterpretResult::Value(Value::Nun))
+            },
+            Expr::RustFunctionCall { path, arguments } => {
+                trace!("Interpreting Rust function call: {:?}", path);
+                let mut arg_values = Vec::new();
+                for arg in arguments {
+                    match self.interpret(arg)? {
+                        InterpretResult::Value(v) => arg_values.push(v),
+                        InterpretResult::Return(_) => return Err("Unexpected return".to_string()),
+                    }
+                }
+                self.call_rust_function(path, arg_values)
+            },
             Expr::FunctionCall { callee, arguments } => {
                 let callee_value = self.interpret(callee)?;
                 let mut arg_values = Vec::new();
                 for arg in arguments {
-                    
                     match self.interpret(arg)? {
                         InterpretResult::Value(v) => arg_values.push(v),
                         InterpretResult::Return(_) => return Err("Unexpected return".to_string()),
@@ -147,9 +166,18 @@ impl Interpreter {
                 }
                 self.call_function(callee_value, arg_values)
             },
-            &Expr::Import(_) => todo!(),
-            &Expr::RustFunctionCall { .. } => todo!(),
         }
+    }
+
+    fn call_rust_function(&self, path: &[String], arguments: Vec<Value>) -> Result<InterpretResult, String> {
+        if path.len() < 2 {
+            return Err("Invalid Rust function path".to_string());
+        }
+        let feather_name = &path[0];
+        let function_name = path[1..].join("::");
+
+        self.feather_manager.borrow().call_function(feather_name, &function_name, arguments)
+            .map(InterpretResult::Value)
     }
 
     fn call_function(&self, callee: InterpretResult, arguments: Vec<Value>) -> Result<InterpretResult, String> {
@@ -168,6 +196,7 @@ impl Interpreter {
 
                 let new_interpreter = Interpreter {
                     environment: new_env,
+                    feather_manager: Rc::clone(&self.feather_manager),
                 };
 
                 let mut last_value = Value::Nun;
@@ -180,6 +209,10 @@ impl Interpreter {
                 }
 
                 Ok(InterpretResult::Value(last_value))
+            },
+            InterpretResult::Value(Value::FeatherFunction(feather_name, function_name)) => {
+                self.feather_manager.borrow().call_function(&feather_name, &function_name, arguments)
+                    .map(InterpretResult::Value)
             },
             _ => Err("Can only call functions.".to_string()),
         }

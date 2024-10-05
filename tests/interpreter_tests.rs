@@ -1,14 +1,27 @@
+use std::cell::RefCell;
+use std::rc::Rc;
+use pelin::feather::FeatherManager;
 use pelin::lexer::{Lexer};
 use pelin::parser::Parser;
-use pelin::interpreter::{Interpreter, Value};
+use pelin::interpreter::{InterpretResult, Interpreter, Value};
 
 fn interpret(input: &str) -> Result<Value, String> {
     let mut lexer = Lexer::new(input);
     let tokens = lexer.tokenize()?;
     let mut parser = Parser::new(tokens);
     let expressions = parser.parse()?;
-    let interpreter = Interpreter::new();
-    interpreter.interpret_program(&expressions)
+
+    let feather_manager = Rc::new(RefCell::new(FeatherManager::new(std::env::current_dir().unwrap())));
+    let interpreter = Interpreter::new(Rc::clone(&feather_manager));
+
+    let mut result = Value::Nun;
+    for expr in expressions {
+        match interpreter.interpret(&expr)? {
+            InterpretResult::Value(value) => result = value,
+            InterpretResult::Return(value) => return Ok(value),
+        }
+    }
+    Ok(result)
 }
 
 #[test]
@@ -101,4 +114,25 @@ fn test_interpret_undefined_variable() {
 fn test_interpret_invalid_function_call() {
     let input = "42()";
     assert!(interpret(input).is_err());
+}
+
+#[test]
+fn test_interpret_import() {
+    let input = "imp std_math";
+    assert_eq!(interpret(input), Ok(Value::Nun));
+}
+
+#[test]
+fn test_interpret_rust_function_call() {
+    let input = "RUST[std_func::add](5, 3)";
+    assert_eq!(interpret(input), Ok(Value::Number(8.0)));
+}
+
+#[test]
+fn test_interpret_feather_function() {
+    let input = r#"
+        imp std_math
+        std_math.add(5, 3)
+    "#;
+    assert_eq!(interpret(input), Ok(Value::Number(8.0)));
 }
