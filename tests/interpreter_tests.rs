@@ -1,4 +1,4 @@
-use pelin::lexer::{tokens_to_token_types, Lexer};
+use pelin::lexer::{Lexer};
 use pelin::parser::Parser;
 use pelin::interpreter::{Interpreter, Value};
 
