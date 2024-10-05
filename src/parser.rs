@@ -1,4 +1,4 @@
-use crate::lexer::TokenType;
+use crate::lexer::{Token, TokenType};
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Type {
@@ -34,13 +34,12 @@ pub enum Expr {
 }
 
 pub struct Parser {
-    tokens: Vec<TokenType>,
+    tokens: Vec<Token>,
     current: usize,
 }
 
 impl Parser {
-    //TODO change parser to take Tokens for better error handling
-    pub fn new(tokens: Vec<TokenType>) -> Self {
+    pub fn new(tokens: Vec<Token>) -> Self {
         Parser { tokens, current: 0 }
     }
 
@@ -56,39 +55,37 @@ impl Parser {
         if self.match_token(&[TokenType::Return]) {
             let value = self.expression()?;
             Ok(Expr::Return(Box::new(value)))
+        } else if self.match_token(&[TokenType::Fn]) {
+            self.function_definition()
         } else {
-            if self.match_token(&[TokenType::Fn]) {
-                self.function_definition()
-            } else {
-                self.function_call()
-            }
+            self.function_call()
         }
     }
 
     fn function_definition(&mut self) -> Result<Expr, String> {
         let return_type = self.parse_type()?;
-        let name = self.consume_identifier("Expect function name.")?;
-        self.consume(TokenType::LeftParen, "Expect '(' after function name.")?;
+        let name = self.consume_identifier("Expected function name")?;
+        self.consume(TokenType::LeftParen, "Expected '(' after function name")?;
 
         let mut parameters = Vec::new();
         if !self.check(&TokenType::RightParen) {
             loop {
                 let param_type = self.parse_type()?;
-                let param_name = self.consume_identifier("Expect parameter name.")?;
+                let param_name = self.consume_identifier("Expected parameter name")?;
                 parameters.push((param_type, param_name));
                 if !self.match_token(&[TokenType::Comma]) {
                     break;
                 }
             }
         }
-        self.consume(TokenType::RightParen, "Expect ')' after parameters.")?;
+        self.consume(TokenType::RightParen, "Expected ')' after parameters")?;
 
-        self.consume(TokenType::LeftBrace, "Expect '{' before function body.")?;
+        self.consume(TokenType::LeftBrace, "Expected '{' before function body")?;
         let mut body = Vec::new();
         while !self.check(&TokenType::RightBrace) {
             body.push(Box::new(self.expression()?));
         }
-        self.consume(TokenType::RightBrace, "Expect '}' after function body.")?;
+        self.consume(TokenType::RightBrace, "Expected '}' after function body")?;
 
         Ok(Expr::FunctionDefinition {
             return_type,
@@ -99,16 +96,20 @@ impl Parser {
     }
 
     fn parse_type(&mut self) -> Result<Type, String> {
-        match self.advance() {
-            Some(TokenType::Identifier(name)) => Ok(match name.as_str() {
-                "num" => Type::Num,
-                "str" => Type::Str,
-                "bool" => Type::Bool,
-                "nun" => Type::Nun,
-                _ => Type::Custom(name.clone()),
-            }),
-            Some(TokenType::Nun) => Ok(Type::Nun),
-            _ => Err("Expect type name.".to_string()),
+        if let Some(token) = self.advance() {
+            match &token.kind {
+                TokenType::Identifier(name) => Ok(match name.as_str() {
+                    "num" => Type::Num,
+                    "str" => Type::Str,
+                    "bool" => Type::Bool,
+                    "nun" => Type::Nun,
+                    _ => Type::Custom(name.clone()),
+                }),
+                TokenType::Nun => Ok(Type::Nun),
+                _ => Err(self.error_at_previous("Expected type name")),
+            }
+        } else {
+            Err(self.error_at_end("Unexpected end of input while parsing type"))
         }
     }
 
@@ -138,29 +139,33 @@ impl Parser {
             }
         }
 
-        self.consume(TokenType::RightParen, "Expect ')' after arguments.")?;
+        self.consume(TokenType::RightParen, "Expected ')' after arguments")?;
         Ok(args)
     }
 
     fn primary(&mut self) -> Result<Expr, String> {
         if let Some(token) = self.advance() {
-            match token {
+            match &token.kind {
                 TokenType::Number(n) => Ok(Expr::Number(*n)),
                 TokenType::String(s) => Ok(Expr::String(s.clone())),
                 TokenType::Boolean(b) => Ok(Expr::Boolean(*b)),
                 TokenType::Nun => Ok(Expr::Nun),
                 TokenType::Identifier(name) => Ok(Expr::Identifier(name.clone())),
-                _ => Err(format!("Unexpected token: {:?}", token)),
+                _ => Err(self.error_at_previous("Unexpected token")),
             }
         } else {
-            Err("Unexpected end of input".to_string())
+            Err(self.error_at_end("Unexpected end of input"))
         }
     }
 
     fn consume_identifier(&mut self, message: &str) -> Result<String, String> {
-        match self.advance() {
-            Some(TokenType::Identifier(name)) => Ok(name.clone()),
-            _ => Err(message.to_string()),
+        if let Some(token) = self.advance() {
+            match &token.kind {
+                TokenType::Identifier(name) => Ok(name.clone()),
+                _ => Err(self.error_at_previous(message)),
+            }
+        } else {
+            Err(self.error_at_end(message))
         }
     }
 
@@ -175,10 +180,10 @@ impl Parser {
     }
 
     fn check(&self, t: &TokenType) -> bool {
-        self.peek().map_or(false, |token| token == t)
+        self.peek().map_or(false, |token| &token.kind == t)
     }
 
-    fn advance(&mut self) -> Option<&TokenType> {
+    fn advance(&mut self) -> Option<&Token> {
         if !self.is_at_end() {
             self.current += 1;
         }
@@ -186,26 +191,46 @@ impl Parser {
     }
 
     fn is_at_end(&self) -> bool {
-        self.peek().map_or(true, |t| matches!(t, TokenType::EOF))
+        self.peek().map_or(true, |t| matches!(t.kind, TokenType::EOF))
     }
 
-    fn peek(&self) -> Option<&TokenType> {
+    fn peek(&self) -> Option<&Token> {
         self.tokens.get(self.current)
     }
 
-    fn previous(&self) -> Option<&TokenType> {
-        if self.current > 0 {
-            self.tokens.get(self.current - 1)
-        } else {
-            None
-        }
+    fn previous(&self) -> Option<&Token> {
+        self.tokens.get(self.current - 1)
     }
 
-    fn consume(&mut self, t: TokenType, message: &str) -> Result<&TokenType, String> {
+    fn consume(&mut self, t: TokenType, message: &str) -> Result<&Token, String> {
         if self.check(&t) {
             Ok(self.advance().unwrap())
         } else {
-            Err(message.to_string())
+            if self.is_at_end() {
+                Err(self.error_at_end(message))
+            } else {
+                Err(self.error_at_current(message))
+            }
         }
+    }
+
+    fn error_at_current(&self, message: &str) -> String {
+        self.error_at(self.current, message)
+    }
+
+    fn error_at_previous(&self, message: &str) -> String {
+        self.error_at(self.current - 1, message)
+    }
+
+    fn error_at_end(&self, message: &str) -> String {
+        let last_token = self.tokens.last().unwrap();
+        format!("[line {}, column {}] Error at end: {}",
+                last_token.line, last_token.column, message)
+    }
+
+    fn error_at(&self, index: usize, message: &str) -> String {
+        let token = &self.tokens[index];
+        format!("[line {}, column {}] Error at '{}': {}",
+                token.line, token.column, token.lexeme, message)
     }
 }
