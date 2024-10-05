@@ -60,6 +60,16 @@ impl FeatherManager {
         self.std_functions.insert("to_number".to_string(), Arc::new(std_convert_to_number));
         self.std_functions.insert("file_read".to_string(), Arc::new(std_file_read));
         self.std_functions.insert("file_write".to_string(), Arc::new(std_file_write));
+        self.std_functions.insert("eq".to_string(), Arc::new(std_compare_eq));
+        self.std_functions.insert("neq".to_string(), Arc::new(std_compare_neq));
+        self.std_functions.insert("gt".to_string(), Arc::new(std_compare_gt));
+        self.std_functions.insert("gte".to_string(), Arc::new(std_compare_gte));
+        self.std_functions.insert("lt".to_string(), Arc::new(std_compare_lt));
+        self.std_functions.insert("lte".to_string(), Arc::new(std_compare_lte));
+        self.std_functions.insert("lt".to_string(), Arc::new(std_compare_lt));
+        self.std_functions.insert("lte".to_string(), Arc::new(std_compare_lte));
+        self.std_functions.insert("and".to_string(), Arc::new(std_logic_and));
+        self.std_functions.insert("not".to_string(), Arc::new(std_logic_not));
         debug!("Standard functions registered: {:?}", self.std_functions.keys());
     }
 

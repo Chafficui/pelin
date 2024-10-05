@@ -115,7 +115,7 @@ pub fn std_convert_to_number(args: Vec<Value>) -> Result<Value, String> {
     }
 }
 
-// io
+// io TODO: fix this
 pub fn std_io_print(args: Vec<Value>) -> Result<Value, String> {
     for arg in args {
         print!("{:?}", arg);
@@ -123,7 +123,7 @@ pub fn std_io_print(args: Vec<Value>) -> Result<Value, String> {
     Ok(Value::Nun)
 }
 
-// if, while, for, etc.
+// control TODO: implement this
 pub fn std_control_if(args: Vec<Value>) -> Result<Value, String> {
     if args.len() != 3 {
         return Err("if function expects 3 arguments".to_string());
@@ -137,6 +137,83 @@ pub fn std_control_if(args: Vec<Value>) -> Result<Value, String> {
             }
         }
         _ => Err("if function expects a boolean argument".to_string()),
+    }
+}
+
+// comparison
+pub fn std_compare_eq(args: Vec<Value>) -> Result<Value, String> {
+    if args.len() != 2 {
+        return Err("eq function expects 2 arguments".to_string());
+    }
+    Ok(Value::Boolean(args[0] == args[1]))
+}
+
+pub fn std_compare_neq(args: Vec<Value>) -> Result<Value, String> {
+    if args.len() != 2 {
+        return Err("ne function expects 2 arguments".to_string());
+    }
+    Ok(Value::Boolean(args[0] != args[1]))
+}
+
+pub fn std_compare_lt(args: Vec<Value>) -> Result<Value, String> {
+    if args.len() != 2 {
+        return Err("lt function expects 2 arguments".to_string());
+    }
+    match (&args[0], &args[1]) {
+        (Value::Number(a), Value::Number(b)) => Ok(Value::Boolean(a < b)),
+        _ => Err("lt function expects number arguments".to_string()),
+    }
+}
+
+pub fn std_compare_gt(args: Vec<Value>) -> Result<Value, String> {
+    if args.len() != 2 {
+        return Err("gt function expects 2 arguments".to_string());
+    }
+    match (&args[0], &args[1]) {
+        (Value::Number(a), Value::Number(b)) => Ok(Value::Boolean(a > b)),
+        _ => Err("gt function expects number arguments".to_string()),
+    }
+}
+
+pub fn std_compare_lte(args: Vec<Value>) -> Result<Value, String> {
+    if args.len() != 2 {
+        return Err("le function expects 2 arguments".to_string());
+    }
+    match (&args[0], &args[1]) {
+        (Value::Number(a), Value::Number(b)) => Ok(Value::Boolean(a <= b)),
+        _ => Err("le function expects number arguments".to_string()),
+    }
+}
+
+pub fn std_compare_gte(args: Vec<Value>) -> Result<Value, String> {
+    if args.len() != 2 {
+        return Err("ge function expects 2 arguments".to_string());
+    }
+    match (&args[0], &args[1]) {
+        (Value::Number(a), Value::Number(b)) => Ok(Value::Boolean(a >= b)),
+        _ => Err("ge function expects number arguments".to_string()),
+    }
+}
+
+// logic
+
+pub fn std_logic_and(args: Vec<Value>) -> Result<Value, String> {
+    if args.len() != 2 {
+        return Err("and function expects 2 arguments".to_string());
+    }
+    match (&args[0], &args[1]) {
+        (Value::Boolean(a), Value::Boolean(b)) => Ok(Value::Boolean(*a && *b)),
+        _ => Err("and function expects boolean arguments".to_string()),
+    }
+}
+
+pub fn std_logic_not(args: Vec<Value>) -> Result<Value, String> {
+    if args.len() != 1 {
+        return Err("not function expects 1 argument".to_string());
+    }
+    match &args[0] {
+        Value::Boolean(b) => Ok(Value::Boolean(!b)),
+        _ => Err("not function expects a boolean argument".to_string()),
     }
 }
 
