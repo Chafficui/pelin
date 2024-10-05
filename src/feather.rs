@@ -52,6 +52,14 @@ impl FeatherManager {
         self.std_functions.insert("multiply".to_string(), Arc::new(std_num_multiply));
         self.std_functions.insert("divide".to_string(), Arc::new(std_num_divide));
         self.std_functions.insert("sqrt".to_string(), Arc::new(std_num_sqrt));
+        self.std_functions.insert("print".to_string(), Arc::new(std_io_print));
+        self.std_functions.insert("if".to_string(), Arc::new(std_control_if));
+        self.std_functions.insert("math_sin".to_string(), Arc::new(std_math_sin));
+        self.std_functions.insert("math_cos".to_string(), Arc::new(std_math_cos));
+        self.std_functions.insert("to_string".to_string(), Arc::new(std_convert_to_string));
+        self.std_functions.insert("to_number".to_string(), Arc::new(std_convert_to_number));
+        self.std_functions.insert("file_read".to_string(), Arc::new(std_file_read));
+        self.std_functions.insert("file_write".to_string(), Arc::new(std_file_write));
         debug!("Standard functions registered: {:?}", self.std_functions.keys());
     }
 
@@ -124,6 +132,17 @@ impl FeatherManager {
     }
 
     fn call_rust_function(&self, path: &str, args: Vec<Value>) -> Result<Value, String> {
+        if path.starts_with("std_func") {
+            let function_name = path.trim_start_matches("std_func::");
+            if let Some(func) = self.std_functions.get(function_name) {
+                debug!("Calling standard function: {}", function_name);
+                return func(args);
+            } else {
+                error!("Standard function not found: {}", function_name);
+                return Err(format!("Standard function not found: {}", function_name));
+            }
+        }
+        
         debug!("Calling Rust function: {} with args: {:?}", path, args);
         let parts: Vec<&str> = path.split("::").collect();
         if parts.len() < 2 {
@@ -166,6 +185,8 @@ impl FeatherManager {
 
     pub fn call_function(&self, feather_name: &str, function_name: &str, arguments: Vec<Value>) -> Result<Value, String> {
         debug!("Calling function '{}' from feather '{}' with args: {:?}", function_name, feather_name, arguments);
+
+        // First, check if it's a standard function
         if feather_name == "std_func" {
             if let Some(func) = self.std_functions.get(function_name) {
                 debug!("Calling standard function: {}", function_name);
@@ -173,19 +194,22 @@ impl FeatherManager {
             }
         }
 
+        // If not a standard function, look for the feather
         let feather = self.feathers.get(feather_name)
             .ok_or_else(|| {
                 error!("Feather '{}' not found", feather_name);
                 format!("Feather '{}' not found", feather_name)
             })?;
 
+        // Look for the function in the feather
         let function = feather.functions.get(function_name)
             .ok_or_else(|| {
                 error!("Function '{}' not found in feather '{}'", function_name, feather_name);
                 format!("Function '{}' not found in feather '{}'", function_name, feather_name)
             })?;
 
-        debug!("Calling feather function");
+        // Call the feather function
+        debug!("Calling feather function '{}' from '{}'", function_name, feather_name);
         let result = function(arguments);
         debug!("Feather function call result: {:?}", result);
         result

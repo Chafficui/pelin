@@ -124,10 +124,10 @@ fn test_lexer_number_followed_by_dot() {
 
 #[test]
 fn test_lexer_feather_function_call() {
-    let mut lexer = Lexer::new("std_math.add(5, 3)");
+    let mut lexer = Lexer::new("std_num.add(5, 3)");
     let tokens = lexer.tokenize().unwrap();
     assert_eq!(tokens_to_token_types(tokens), vec![
-        TokenType::Identifier("std_math".to_string()),
+        TokenType::Identifier("std_num".to_string()),
         TokenType::Dot,
         TokenType::Identifier("add".to_string()),
         TokenType::LeftParen,
@@ -141,11 +141,11 @@ fn test_lexer_feather_function_call() {
 
 #[test]
 fn test_lexer_imp_keyword() {
-    let mut lexer = Lexer::new("imp std_math");
+    let mut lexer = Lexer::new("imp std_num");
     let tokens = lexer.tokenize().unwrap();
     assert_eq!(tokens_to_token_types(tokens), vec![
         TokenType::Imp,
-        TokenType::Identifier("std_math".to_string()),
+        TokenType::Identifier("std_num".to_string()),
         TokenType::EOF
     ]);
 }

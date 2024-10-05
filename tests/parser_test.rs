@@ -122,11 +122,11 @@ fn test_parse_empty_function() {
 
 #[test]
 fn test_parse_import_statement() {
-    let mut lexer = Lexer::new("imp std_math");
+    let mut lexer = Lexer::new("imp std_num");
     let tokens = lexer.tokenize().unwrap();
     let mut parser = Parser::new(tokens);
     let expr = parser.parse().unwrap();
-    assert_eq!(expr, vec![Expr::Import("std_math".to_string())]);
+    assert_eq!(expr, vec![Expr::Import("std_num".to_string())]);
 }
 
 #[test]
@@ -144,7 +144,7 @@ fn test_parse_rust_function_call() {
 #[test]
 fn test_parse_mixed_expressions() {
     let input = r#"
-        imp std_math
+        imp std_num
         fn num add_and_multiply(num a, num b) {
             return RUST[std::num::multiply](RUST[std::num::add](a, b), 2)
         }
@@ -156,7 +156,7 @@ fn test_parse_mixed_expressions() {
     let expr = parser.parse().unwrap();
 
     assert_eq!(expr.len(), 3);
-    assert_eq!(expr[0], Expr::Import("std_math".to_string()));
+    assert_eq!(expr[0], Expr::Import("std_num".to_string()));
     match &expr[1] {
         Expr::FunctionDefinition { return_type, name, parameters, body } => {
             assert_eq!(*return_type, Type::Num);

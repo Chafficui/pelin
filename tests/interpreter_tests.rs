@@ -123,7 +123,7 @@ fn test_interpret_invalid_function_call() {
 
 #[test]
 fn test_interpret_import() {
-    let input = "imp std_math";
+    let input = "imp std_num";
     assert_eq!(interpret(input), Ok(Value::Nun));
 }
 
@@ -136,8 +136,19 @@ fn test_interpret_rust_function_call() {
 #[test]
 fn test_interpret_feather_function() {
     let input = r#"
-        imp std_math
-        std_math.add(5, 3)
+        imp std_num
+        std_num.add(5, 3)
     "#;
     assert_eq!(interpret(input), Ok(Value::Number(8.0)));
+}
+
+#[test]
+fn test_interpret_file_feather() {
+    let input = r#"
+        imp std_file
+        std_file.read_file("feathers/std_file.pl")
+    "#;
+    //compare with real file content
+    let real_content = std::fs::read_to_string("feathers/std_file.pl").unwrap();
+    assert_eq!(interpret(input), Ok(Value::String(real_content)));
 }
