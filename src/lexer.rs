@@ -25,9 +25,13 @@ pub enum TokenType {
     RightBrace,
     Comma,
     Equal,
-    // Import
+    // Feathers
     Imp,
     Dot,
+    LeftBracket,
+    RightBracket,
+    RustKeyword,
+    DoubleColon,
     // End of input
     EOF,
 }
@@ -90,8 +94,19 @@ impl Lexer {
             '}' => { self.advance(); Ok(Token { kind: TokenType::RightBrace, lexeme: "}".to_string(), line: self.line, column: start_column }) },
             ',' => { self.advance(); Ok(Token { kind: TokenType::Comma, lexeme: ",".to_string(), line: self.line, column: start_column }) },
             '"' => self.string(),
-            '=' => { self.advance(); Ok(Token { kind: TokenType::Equal, lexeme: "=".to_string(), line: self.line, column: start_column }) },
+            '[' => { self.advance(); Ok(Token { kind: TokenType::LeftBracket, lexeme: "[".to_string(), line: self.line, column: start_column }) },
+            ']' => { self.advance(); Ok(Token { kind: TokenType::RightBracket, lexeme: "]".to_string(), line: self.line, column: start_column }) },
             '.' => { self.advance(); Ok(Token { kind: TokenType::Dot, lexeme: ".".to_string(), line: self.line, column: start_column }) },
+            ':' => {
+                self.advance();
+                if self.peek() == Some(':') {
+                    self.advance();
+                    Ok(Token { kind: TokenType::DoubleColon, lexeme: "::".to_string(), line: self.line, column: start_column })
+                } else {
+                    Err(format!("Unexpected character: ':' at line {}, column {}", self.line, self.column))
+                }
+            },
+            '=' => { self.advance(); Ok(Token { kind: TokenType::Equal, lexeme: "=".to_string(), line: self.line, column: start_column }) },
             '0'..='9' => self.number(),
             'a'..='z' | 'A'..='Z' | '_' => self.identifier_or_keyword(),
             _ => Err(format!("Unexpected character: '{}' at line {}, column {}", c, self.line, self.column)),
@@ -216,6 +231,7 @@ impl Lexer {
             "nun" => TokenType::Nun,
             "return" => TokenType::Return,
             "imp" => TokenType::Imp,
+            "RUST" => TokenType::RustKeyword,
             _ => Identifier(value.clone()),
         };
 

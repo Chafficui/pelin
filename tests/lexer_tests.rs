@@ -138,3 +138,50 @@ fn test_lexer_feather_function_call() {
         TokenType::EOF
     ]);
 }
+
+#[test]
+fn test_lexer_imp_keyword() {
+    let mut lexer = Lexer::new("imp std_math");
+    let tokens = lexer.tokenize().unwrap();
+    assert_eq!(tokens_to_token_types(tokens), vec![
+        TokenType::Imp,
+        TokenType::Identifier("std_math".to_string()),
+        TokenType::EOF
+    ]);
+}
+
+#[test]
+fn test_lexer_rust_function_call() {
+    let mut lexer = Lexer::new("RUST[std::num::add](a, b)");
+    let tokens = lexer.tokenize().unwrap();
+    assert_eq!(tokens_to_token_types(tokens), vec![
+        TokenType::RustKeyword,
+        TokenType::LeftBracket,
+        TokenType::Identifier("std".to_string()),
+        TokenType::DoubleColon,
+        TokenType::Identifier("num".to_string()),
+        TokenType::DoubleColon,
+        TokenType::Identifier("add".to_string()),
+        TokenType::RightBracket,
+        TokenType::LeftParen,
+        TokenType::Identifier("a".to_string()),
+        TokenType::Comma,
+        TokenType::Identifier("b".to_string()),
+        TokenType::RightParen,
+        TokenType::EOF
+    ]);
+}
+
+#[test]
+fn test_lexer_double_colon() {
+    let mut lexer = Lexer::new("std::num::add");
+    let tokens = lexer.tokenize().unwrap();
+    assert_eq!(tokens_to_token_types(tokens), vec![
+        TokenType::Identifier("std".to_string()),
+        TokenType::DoubleColon,
+        TokenType::Identifier("num".to_string()),
+        TokenType::DoubleColon,
+        TokenType::Identifier("add".to_string()),
+        TokenType::EOF
+    ]);
+}
