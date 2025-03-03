@@ -123,8 +123,8 @@ impl FeatherManager {
                         if let Expr::RustFunctionCall { path, arguments: _ } = &**body_expr {
                             feather_manager.call_rust_function(&path.join("::"), args)
                         } else {
-                            error!("Function body does not contain a Rust function call");
-                            Err("Function body does not contain a Rust function call".to_string())
+                            error!("Function body of '{}' does not contain a Rust function call", func_name);
+                            Err("Function body of '{}' does not contain a Rust function call".to_string())
                         }
                     } else {
                         error!("Function body is empty");
