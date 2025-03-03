@@ -24,13 +24,15 @@ fn test_feather_manager_creation() {
 #[test]
 fn test_import_non_existent_feather() {
     let project_root = PathBuf::from("/tmp/test_project");
+    let root_dir = project_root.clone();
     let mut manager = FeatherManager::new(project_root);
     let result = manager.import("non_existent_feather");
     assert!(result.is_err());
-    assert_eq!(
-        result.unwrap_err(),
-        "Could not find Feather file: /tmp/test_project\\feathers\\non_existent_feather.pl"
+    let expected_error = format!(
+        "Could not find Feather file: {}",
+        root_dir.join("feathers").join("non_existent_feather.pl").display()
     );
+    assert_eq!(result.unwrap_err(), expected_error);
 }
 
 #[test]
